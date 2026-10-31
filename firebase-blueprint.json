@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "Book": {
+      "title": "Book",
+      "description": "Represents an illuminated library book with pricing, content, and metadata",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the book" },
+        "author": { "type": "string", "description": "Name of the author" },
+        "authorId": { "type": "string", "description": "Firebase UID of the author" },
+        "description": { "type": "string", "description": "Short synopsis or description" },
+        "priceDzd": { "type": "number", "description": "Price in Algerian Dinars (BaridiMob)" },
+        "priceUsdt": { "type": "number", "description": "Price in USDT (Binance)" },
+        "isFree": { "type": "boolean", "description": "Whether the book is freely readable" },
+        "category": { "type": "string", "description": "Category or genre" },
+        "pageCount": { "type": "integer", "description": "Estimated book page count" },
+        "publishedPeriod": { "type": "string", "description": "Authoring period or year" },
+        "coverStyleIndex": { "type": "integer", "description": "Visual theme cover style index" },
+        "sampleContent": { "type": "string", "description": "Public excerpt preview" },
+        "fullContent": { "type": "string", "description": "Full manuscript/text content" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp submitted via FieldValue.serverTimestamp()" }
+      },
+      "required": ["title", "author", "authorId", "priceDzd", "priceUsdt", "isFree", "category", "createdAt"]
+    },
+    "PaymentSettings": {
+      "title": "PaymentSettings",
+      "description": "Configured payment receiving identifiers for Algerian BaridiMob and international Binance",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string", "description": "Author UID" },
+        "baridiMobRip": { "type": "string", "description": "20-digit BaridiMob RIP" },
+        "baridiMobAccountHolder": { "type": "string", "description": "Account holder full name" },
+        "baridiMobPhone": { "type": "string", "description": "Phone number" },
+        "baridiMobCcpNumber": { "type": "string", "description": "CCP account string" },
+        "binancePayId": { "type": "string", "description": "Binance Pay direct ID" },
+        "binanceUsdtAddress": { "type": "string", "description": "USDT cryptocurrency wallet address" },
+        "binanceNetwork": { "type": "string", "description": "Network (e.g. TRC20, BEP20)" },
+        "binanceEmail": { "type": "string", "description": "Binance notification email" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp submitted via FieldValue.serverTimestamp()" }
+      },
+      "required": ["authorId", "baridiMobRip", "baridiMobAccountHolder", "binancePayId", "binanceUsdtAddress", "updatedAt"]
+    },
+    "PurchaseOrder": {
+      "title": "PurchaseOrder",
+      "description": "Purchase transaction submitted by an Algerian (BaridiMob) or international (Binance) buyer",
+      "type": "object",
+      "properties": {
+        "bookId": { "type": "string", "description": "Document ID of the purchased book" },
+        "bookTitle": { "type": "string", "description": "Title of the book" },
+        "buyerId": { "type": "string", "description": "Firebase UID of the buyer" },
+        "authorId": { "type": "string", "description": "Firebase UID of the book author" },
+        "paymentMethod": { "type": "string", "enum": ["BARIDIMOB", "BINANCE"], "description": "Payment channel used" },
+        "amountFormatted": { "type": "string", "description": "Formatted payment amount (e.g. 1500 DZD or 10 USDT)" },
+        "transactionReference": { "type": "string", "description": "Transaction ID or BaridiMob receipt number" },
+        "customerContact": { "type": "string", "description": "Buyer's phone or email" },
+        "customerNote": { "type": "string", "description": "Optional message to author" },
+        "status": { "type": "string", "enum": ["PENDING", "CONFIRMED", "REJECTED"], "description": "Order processing state" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp submitted via FieldValue.serverTimestamp()" }
+      },
+      "required": ["bookId", "bookTitle", "buyerId", "paymentMethod", "amountFormatted", "transactionReference", "status", "createdAt"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Registered reader or author user record",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Authentication user ID" },
+        "displayName": { "type": "string", "description": "Full display name" },
+        "email": { "type": "string", "description": "User email address" },
+        "photoUrl": { "type": "string", "description": "Avatar photo URL" },
+        "role": { "type": "string", "description": "User role: author or reader" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp submitted via FieldValue.serverTimestamp()" }
+      },
+      "required": ["uid", "displayName", "email", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/books/{bookId}": {
+      "schema": { "$ref": "#/entities/Book" },
+      "description": "Library book catalog containing published works with BaridiMob & Binance pricing"
+    },
+    "/payment_settings/{settingsId}": {
+      "schema": { "$ref": "#/entities/PaymentSettings" },
+      "description": "Author payout credentials for BaridiMob and Binance"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/PurchaseOrder" },
+      "description": "Book purchase receipts and proof verification orders"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Registered application users"
+    }
+  }
+}

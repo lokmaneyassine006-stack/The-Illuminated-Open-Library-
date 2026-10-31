@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-android-theillum-241cba4a-6298-494b-b542-2ff45e06cf67",
+      "rules": "firestore.rules"
+    }
+  ]
+}

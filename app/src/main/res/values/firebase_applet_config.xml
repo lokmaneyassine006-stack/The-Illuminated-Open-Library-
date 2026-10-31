@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+    <string name="firestore_database_id" translatable="false">ai-studio-android-theillum-241cba4a-6298-494b-b542-2ff45e06cf67</string>
+    <string name="recaptcha_site_key" translatable="false">6LdnlQQuAAAAAH6DtgzU0VILy6qRjjXS7riWHs9J</string>
+</resources>

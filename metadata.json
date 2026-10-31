@@ -1,0 +1,6 @@
+{
+  "name": "The Illuminated Open Library",
+  "description": "منصة المكتبة المنيرة المفتوحة لإضافة الكتب وتحديد الأسعار وإتاحة الدفع عبر بريدي موب (BaridiMob) للمتعاملين من الجزائر وبينانس (Binance USDT) للمتعاملين من الخارج",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

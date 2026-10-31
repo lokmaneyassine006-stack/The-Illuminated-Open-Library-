@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidTimestamp(val) {
+      return val is timestamp && val <= request.time;
+    }
+
+    // Books Validation
+    function isValidBook(data) {
+      return data.keys().hasAll(['title', 'author', 'authorId', 'priceDzd', 'priceUsdt', 'isFree', 'category', 'createdAt'])
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.author is string && data.author.size() > 0 && data.author.size() <= 100
+        && data.authorId is string && data.authorId == request.auth.uid
+        && data.priceDzd is number && data.priceDzd >= 0
+        && data.priceUsdt is number && data.priceUsdt >= 0
+        && data.isFree is bool
+        && data.category is string && data.category.size() > 0 && data.category.size() <= 50
+        && isValidTimestamp(data.createdAt);
+    }
+
+    // Payment Settings Validation (Author BaridiMob & Binance credentials)
+    function isValidPaymentSettings(data) {
+      return data.keys().hasAll(['authorId', 'baridiMobRip', 'baridiMobAccountHolder', 'binancePayId', 'binanceUsdtAddress', 'updatedAt'])
+        && data.authorId is string && data.authorId == request.auth.uid
+        && data.baridiMobRip is string && data.baridiMobRip.size() >= 10 && data.baridiMobRip.size() <= 30
+        && data.baridiMobAccountHolder is string && data.baridiMobAccountHolder.size() > 0
+        && data.binancePayId is string && data.binancePayId.size() > 0
+        && data.binanceUsdtAddress is string && data.binanceUsdtAddress.size() > 0
+        && isValidTimestamp(data.updatedAt);
+    }
+
+    // Purchase Orders Validation
+    function isValidOrder(data) {
+      return data.keys().hasAll(['bookId', 'bookTitle', 'buyerId', 'paymentMethod', 'amountFormatted', 'transactionReference', 'status', 'createdAt'])
+        && data.bookId is string && data.bookId.size() > 0
+        && data.bookTitle is string && data.bookTitle.size() > 0
+        && data.buyerId is string && data.buyerId == request.auth.uid
+        && (data.paymentMethod == 'BARIDIMOB' || data.paymentMethod == 'BINANCE')
+        && data.amountFormatted is string && data.amountFormatted.size() > 0
+        && data.transactionReference is string && data.transactionReference.size() > 0
+        && (data.status == 'PENDING' || data.status == 'CONFIRMED' || data.status == 'REJECTED')
+        && isValidTimestamp(data.createdAt);
+    }
+
+    // User Profile Validation
+    function isValidUser(data, uid) {
+      return data.keys().hasAll(['uid', 'displayName', 'email', 'createdAt'])
+        && data.uid is string && data.uid == uid
+        && data.displayName is string && data.displayName.size() > 0
+        && data.email is string && data.email.size() > 0
+        && isValidTimestamp(data.createdAt);
+    }
+
+    // Reader Reviews Validation
+    function isValidReview(data) {
+      return data.keys().hasAll(['bookId', 'bookTitle', 'authorOrReaderId', 'readerName', 'rating', 'comment', 'createdAt'])
+        && data.bookId is string && data.bookId.size() > 0
+        && data.bookTitle is string && data.bookTitle.size() > 0
+        && data.authorOrReaderId is string && data.authorOrReaderId == request.auth.uid
+        && data.readerName is string && data.readerName.size() > 0
+        && data.rating is number && data.rating >= 1 && data.rating <= 5
+        && data.comment is string && data.comment.size() > 0
+        && isValidTimestamp(data.createdAt);
+    }
+
+    // Book Catalog Rules
+    match /books/{bookId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidBook(request.resource.data);
+      allow update: if isSignedIn() && resource.data.authorId == request.auth.uid && isValidBook(request.resource.data);
+      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+    }
+
+    // Payment Settings Rules (Author specific or public read for checkout)
+    match /payment_settings/{settingsId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && isValidPaymentSettings(request.resource.data);
+      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+    }
+
+    // Purchase Orders Rules
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && (resource.data.buyerId == request.auth.uid || resource.data.authorId == request.auth.uid);
+      allow create: if isSignedIn() && isValidOrder(request.resource.data);
+      allow update: if isSignedIn() && (resource.data.buyerId == request.auth.uid || resource.data.authorId == request.auth.uid);
+      allow delete: if isSignedIn() && resource.data.buyerId == request.auth.uid;
+    }
+
+    // User Profiles
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isOwner(userId) && isValidUser(request.resource.data, userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Reader Reviews Rules
+    match /reviews/{reviewId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidReview(request.resource.data);
+      allow update, delete: if isSignedIn() && resource.data.authorOrReaderId == request.auth.uid;
+    }
+  }
+}
