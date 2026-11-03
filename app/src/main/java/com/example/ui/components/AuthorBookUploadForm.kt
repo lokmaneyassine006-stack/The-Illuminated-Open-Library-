@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.AutoStories
@@ -150,6 +151,7 @@ fun AuthorBookUploadForm(
     var isFree by remember { mutableStateOf(initialBook?.isFree ?: false) }
     var priceDzdText by remember { mutableStateOf((initialBook?.priceDzd?.toInt() ?: 1200).toString()) }
     var priceUsdtText by remember { mutableStateOf((initialBook?.priceUsdt ?: 6.0).toString()) }
+    var selectedPaymentMethod by remember { mutableStateOf("BARIDIMOB") }
 
     // Validation
     var titleError by remember { mutableStateOf<String?>(null) }
@@ -339,6 +341,7 @@ fun AuthorBookUploadForm(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("author_form_title_input")
+                .testTag("add_book_title_field")
         )
 
         // Gemini AI Draft Assistant Button
@@ -434,6 +437,7 @@ fun AuthorBookUploadForm(
                 modifier = Modifier
                     .weight(1.2f)
                     .testTag("author_form_author_input")
+                    .testTag("add_book_author_field")
             )
 
             OutlinedTextField(
@@ -707,6 +711,7 @@ fun AuthorBookUploadForm(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("author_form_desc_input")
+                .testTag("add_book_description_field")
         )
 
         OutlinedTextField(
@@ -803,6 +808,61 @@ fun AuthorBookUploadForm(
 
                 AnimatedVisibility(visible = !isFree) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "طريقة الدفع المعتمدة للكتاب:",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = GoldPrimary
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("author_form_payment_method_selector"),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            FilterChip(
+                                selected = selectedPaymentMethod == "BARIDIMOB",
+                                onClick = { selectedPaymentMethod = "BARIDIMOB" },
+                                label = { Text("بريدي موب (BaridiMob 🇩🇿)", fontSize = 11.sp) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.AccountBalance,
+                                        contentDescription = null,
+                                        tint = BaridiMobGreen,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = BaridiMobGreen.copy(alpha = 0.2f),
+                                    selectedLabelColor = BaridiMobGreen
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("add_book_payment_method_baridimob")
+                            )
+
+                            FilterChip(
+                                selected = selectedPaymentMethod == "BINANCE",
+                                onClick = { selectedPaymentMethod = "BINANCE" },
+                                label = { Text("بينانس (Binance Pay 🌐)", fontSize = 11.sp) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.CurrencyBitcoin,
+                                        contentDescription = null,
+                                        tint = BinanceYellow,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = BinanceYellow.copy(alpha = 0.2f),
+                                    selectedLabelColor = BinanceYellow
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("add_book_payment_method_binance")
+                            )
+                        }
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -825,6 +885,7 @@ fun AuthorBookUploadForm(
                                 modifier = Modifier
                                     .weight(1f)
                                     .testTag("author_form_price_dzd_input")
+                                    .testTag("add_book_price_field")
                             )
 
                             // International Binance USDT Price
@@ -912,7 +973,8 @@ fun AuthorBookUploadForm(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(54.dp)
-                .testTag("author_form_save_btn"),
+                .testTag("author_form_save_btn")
+                .testTag("add_book_submit_button"),
             colors = ButtonDefaults.buttonColors(
                 containerColor = GoldPrimary,
                 contentColor = Color(0xFF1A1500)

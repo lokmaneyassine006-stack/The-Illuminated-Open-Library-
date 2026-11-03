@@ -132,6 +132,58 @@ class UserBookCollectionScreenTest {
     }
 
     @Test
+    fun `test top search bar filters LazyColumn collection by book title and author name`() {
+        composeTestRule.setContent {
+            UserBookCollectionScreen(
+                books = sampleBooks,
+                timezone = AppTimezone.ALGIERS,
+                onAddBookClick = {},
+                onEditPriceClick = {},
+                onEditBookClick = {},
+                onDeleteBookClick = {},
+                onReadBookClick = {},
+                onBackClick = {}
+            )
+        }
+
+        // Search bar exists at top
+        composeTestRule.onNodeWithTag("collection_search_bar").assertExists()
+        composeTestRule.onNodeWithTag("collection_search_field").assertExists()
+
+        // Initially both books exist
+        composeTestRule.onNodeWithTag("collection_book_item_1").assertExists()
+        composeTestRule.onNodeWithTag("collection_book_item_2").assertExists()
+
+        // 1. Filter by book title
+        composeTestRule.onNodeWithTag("collection_search_field").performTextInput("المقاومة")
+        composeTestRule.onNodeWithTag("collection_book_item_1").assertExists()
+        composeTestRule.onNodeWithTag("collection_book_item_2").assertDoesNotExist()
+
+        // Clear query with clear button
+        composeTestRule.onNodeWithTag("collection_search_clear_button").performClick()
+        composeTestRule.onNodeWithTag("collection_book_item_1").assertExists()
+        composeTestRule.onNodeWithTag("collection_book_item_2").assertExists()
+
+        // 2. Filter by author name
+        composeTestRule.onNodeWithTag("collection_search_field").performTextInput("لقمان")
+        composeTestRule.onNodeWithTag("collection_book_item_2").assertExists()
+        composeTestRule.onNodeWithTag("collection_book_item_1").assertDoesNotExist()
+
+        // Clear query with clear button
+        composeTestRule.onNodeWithTag("collection_search_clear_button").performClick()
+        composeTestRule.onNodeWithTag("collection_book_item_1").assertExists()
+        composeTestRule.onNodeWithTag("collection_book_item_2").assertExists()
+
+        // 3. Filter with no match displays empty results state and clear button restores
+        composeTestRule.onNodeWithTag("collection_search_field").performTextInput("غير_موجود")
+        composeTestRule.onNodeWithTag("empty_collection_card").assertExists()
+        composeTestRule.onNodeWithText("لا توجد نتائج مطابقة لبحثك").assertExists()
+        composeTestRule.onNodeWithTag("empty_clear_search_btn").performClick()
+        composeTestRule.onNodeWithTag("collection_book_item_1").assertExists()
+        composeTestRule.onNodeWithTag("collection_book_item_2").assertExists()
+    }
+
+    @Test
     fun `test AuthorLoginScreen unauthenticated state has Google Sign-In button`() {
         var signInTriggered = false
         var backTriggered = false

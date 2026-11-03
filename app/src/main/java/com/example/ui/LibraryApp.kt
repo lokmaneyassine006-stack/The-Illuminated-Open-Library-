@@ -83,6 +83,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
 import com.example.data.model.Book
+import com.example.ui.components.AddBookBottomSheet
+import com.example.ui.components.AddBookDialog
 import com.example.ui.components.AddEditBookDialog
 import com.example.ui.components.AiBookAssistantDialog
 import com.example.ui.components.BookCard
@@ -458,16 +460,13 @@ fun LibraryApp(viewModel: LibraryViewModel) {
 
         // Modals & Dialogs
         if (isAddBookDialogOpen) {
-            AddEditBookDialog(
+            AddBookBottomSheet(
                 initialBook = bookToEdit,
                 authUser = authUser,
                 isSaving = isSavingBook,
                 aiDraftState = aiDraftState,
                 timezone = selectedTimezone,
-                onOpenTimezoneSelector = { viewModel.isTimezoneDialogOpen.value = true },
                 onGenerateWithAi = { viewModel.generateBookDraftWithAi(it) },
-                onResetAiDraftState = { viewModel.resetAiDraftState() },
-                onOpenAuth = { viewModel.openAuthDialog() },
                 onDismiss = {
                     viewModel.isAddBookDialogOpen.value = false
                     viewModel.bookToEdit.value = null

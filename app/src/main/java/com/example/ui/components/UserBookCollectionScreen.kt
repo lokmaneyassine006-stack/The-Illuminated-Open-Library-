@@ -126,49 +126,23 @@ fun UserBookCollectionScreen(
             .fillMaxSize()
             .testTag("user_book_collection_screen"),
         containerColor = MaterialTheme.colorScheme.background,
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddBookClick,
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "إضافة كتاب جديد",
-                        tint = Color.Black
-                    )
-                },
-                text = {
-                    Text(
-                        text = "إضافة كتاب",
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                },
-                containerColor = GoldPrimary,
-                contentColor = Color.Black,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.testTag("add_book_fab")
-            )
-        }
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .testTag("book_collection_lazy_column"),
-            contentPadding = PaddingValues(bottom = 80.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // 1. Top Bar & Branding
-            item {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 3.dp
+        topBar = {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("collection_top_bar"),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 3.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    // Header row: Back button, Title & subtitle, Timezone badge
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -225,10 +199,114 @@ fun UserBookCollectionScreen(
                             }
                         }
                     }
+
+                    // Prominent Search Bar at the top of the collection screen
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("collection_search_bar")
+                    ) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("collection_search_field"),
+                            placeholder = {
+                                Text(
+                                    text = "ابحث عن كتاب بالاسم أو اسم المؤلف...",
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "بحث",
+                                    tint = GoldPrimary
+                                )
+                            },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = { searchQuery = "" },
+                                        modifier = Modifier.testTag("collection_search_clear_button")
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Clear,
+                                            contentDescription = "مسح البحث"
+                                        )
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(14.dp)
+                        )
+                    }
+
+                    // Dynamic search results counter
+                    AnimatedVisibility(visible = searchQuery.isNotBlank()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "نتائج البحث: ${filteredBooks.size} من أصل ${books.size}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = GoldLight,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.testTag("collection_search_results_count")
+                            )
+                            Text(
+                                text = "إلغاء التصفية",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .clickable { searchQuery = "" }
+                                    .testTag("collection_search_reset_label")
+                            )
+                        }
+                    }
                 }
             }
-
-            // 2. Collection Metrics Banner Card
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = onAddBookClick,
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "إضافة كتاب جديد",
+                        tint = Color.Black
+                    )
+                },
+                text = {
+                    Text(
+                        text = "إضافة كتاب",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                },
+                containerColor = GoldPrimary,
+                contentColor = Color.Black,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.testTag("add_book_fab")
+            )
+        }
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .testTag("book_collection_lazy_column"),
+            contentPadding = PaddingValues(top = 12.dp, bottom = 80.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // 1. Collection Metrics Banner Card
             item {
                 CollectionMetricsCard(
                     totalBooks = books.size,
@@ -238,54 +316,29 @@ fun UserBookCollectionScreen(
                 )
             }
 
-            // 3. Search and Category Filter Section
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
+            // 2. Category Filter Section
+            if (categories.size > 2) {
+                item {
+                    LazyRow(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag("collection_search_field"),
-                        placeholder = { Text("ابحث في عنوان، كاتب أو وصف الكتاب...") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = null, tint = GoldPrimary)
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "مسح البحث")
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(14.dp)
-                    )
-
-                    if (categories.size > 2) {
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(categories) { category ->
-                                val isSelected = (selectedCategory == null && category == "الكل") || selectedCategory == category
-                                FilterChip(
-                                    selected = isSelected,
-                                    onClick = {
-                                        selectedCategory = if (category == "الكل") null else category
-                                    },
-                                    label = { Text(category, fontSize = 12.sp) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = GoldPrimary.copy(alpha = 0.25f),
-                                        selectedLabelColor = GoldLight
-                                    ),
-                                    modifier = Modifier.testTag("collection_filter_$category")
-                                )
-                            }
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(categories) { category ->
+                            val isSelected = (selectedCategory == null && category == "الكل") || selectedCategory == category
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    selectedCategory = if (category == "الكل") null else category
+                                },
+                                label = { Text(category, fontSize = 12.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = GoldPrimary.copy(alpha = 0.25f),
+                                    selectedLabelColor = GoldLight
+                                ),
+                                modifier = Modifier.testTag("collection_filter_$category")
+                            )
                         }
                     }
                 }
@@ -760,7 +813,10 @@ private fun EmptyCollectionState(
             )
 
             if (isFiltered) {
-                OutlinedButton(onClick = onClearFilter) {
+                OutlinedButton(
+                    onClick = onClearFilter,
+                    modifier = Modifier.testTag("empty_clear_search_btn")
+                ) {
                     Text("مسح البحث")
                 }
             } else {
