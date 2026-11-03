@@ -88,8 +88,8 @@ import com.example.ui.theme.GoldPrimary
 import com.example.ui.viewmodel.CreatorTab
 import com.example.ui.viewmodel.ReviewsSummary
 import com.example.ui.viewmodel.SalesSummary
-import java.text.SimpleDateFormat
-import java.util.Date
+import com.example.util.AppTimezone
+import com.example.util.TimezoneHelper
 import java.util.Locale
 
 @Composable
@@ -100,6 +100,8 @@ fun CreatorDashboardScreen(
     salesSummary: SalesSummary,
     reviewsSummary: ReviewsSummary,
     selectedTab: CreatorTab,
+    timezone: AppTimezone = AppTimezone.ALGIERS,
+    onOpenTimezoneSelector: () -> Unit = {},
     onTabSelect: (CreatorTab) -> Unit,
     onBackClick: () -> Unit,
     onOpenPaymentSettings: () -> Unit,
@@ -145,6 +147,57 @@ fun CreatorDashboardScreen(
                 onBackClick = onBackClick,
                 onOpenPaymentSettings = onOpenPaymentSettings
             )
+        }
+
+        // 1.1 Timezone Banner
+        item {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = GoldPrimary.copy(alpha = 0.12f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, GoldPrimary.copy(alpha = 0.35f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenTimezoneSelector() }
+                    .testTag("creator_timezone_widget")
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(timezone.flag, fontSize = 20.sp)
+                        Column {
+                            Text(
+                                text = "المنطقة الزمنية المعتمدة: ${timezone.displayNameAr} (${timezone.offsetLabel})",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "الوقت الآن: ${TimezoneHelper.formatArabicHumanDate(System.currentTimeMillis(), timezone)}",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = GoldPrimary,
+                        contentColor = Color(0xFF1A1500)
+                    ) {
+                        Text(
+                            text = "تعديل المنطقة 🌐",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
         }
 
         // 2. Tabs Selector (Sales vs Reviews)
@@ -284,6 +337,7 @@ fun CreatorDashboardScreen(
                 items(filteredOrders, key = { it.orderId }) { order ->
                     CreatorOrderItemCard(
                         order = order,
+                        timezone = timezone,
                         onToggleStatus = { onToggleOrderStatus(order) },
                         onDelete = { onDeleteOrder(order.orderId) }
                     )
@@ -338,6 +392,7 @@ fun CreatorDashboardScreen(
                 items(filteredReviews, key = { it.reviewId }) { review ->
                     CreatorReviewItemCard(
                         review = review,
+                        timezone = timezone,
                         onDelete = { onDeleteReview(review) }
                     )
                 }
@@ -777,6 +832,7 @@ private fun BookSalesBreakdownCard(
 @Composable
 private fun CreatorOrderItemCard(
     order: PurchaseOrder,
+    timezone: AppTimezone = AppTimezone.ALGIERS,
     onToggleStatus: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -859,10 +915,11 @@ private fun CreatorOrderItemCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    val formattedDate = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.US).format(Date(order.timestamp))
+                    val formattedDate = TimezoneHelper.formatFullDateTimeWithZone(order.timestamp, timezone)
                     Text(
                         text = "تاريخ الطلب: $formattedDate",
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -1039,6 +1096,7 @@ private fun ReviewsSummaryCard(
 @Composable
 private fun CreatorReviewItemCard(
     review: Review,
+    timezone: AppTimezone = AppTimezone.ALGIERS,
     onDelete: () -> Unit
 ) {
     ElevatedCard(
@@ -1093,10 +1151,11 @@ private fun CreatorReviewItemCard(
                                 )
                             }
                         }
-                        val formattedDate = SimpleDateFormat("yyyy/MM/dd", Locale.US).format(Date(review.timestamp))
+                        val formattedDate = TimezoneHelper.formatArabicHumanDate(review.timestamp, timezone)
                         Text(
                             text = formattedDate,
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

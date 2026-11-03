@@ -18,6 +18,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.data.auth.AuthUser
 import com.example.data.model.Book
 import com.example.ui.viewmodel.AiDraftState
+import com.example.util.AppTimezone
 
 @Composable
 fun AddEditBookDialog(
@@ -25,6 +26,8 @@ fun AddEditBookDialog(
     authUser: AuthUser? = null,
     isSaving: Boolean = false,
     aiDraftState: AiDraftState = AiDraftState.Idle,
+    timezone: AppTimezone = AppTimezone.ALGIERS,
+    onOpenTimezoneSelector: () -> Unit = {},
     onGenerateWithAi: (String) -> Unit = {},
     onResetAiDraftState: () -> Unit = {},
     onOpenAuth: () -> Unit = {},
@@ -54,6 +57,8 @@ fun AddEditBookDialog(
                     authUser = authUser,
                     isSaving = isSaving,
                     aiDraftState = aiDraftState,
+                    timezone = timezone,
+                    onOpenTimezoneSelector = onOpenTimezoneSelector,
                     onGenerateWithAi = onGenerateWithAi,
                     onResetAiDraftState = onResetAiDraftState,
                     onOpenAuth = onOpenAuth,

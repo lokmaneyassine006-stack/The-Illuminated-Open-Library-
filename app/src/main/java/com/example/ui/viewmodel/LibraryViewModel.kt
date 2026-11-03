@@ -15,6 +15,8 @@ import com.example.data.repository.LibraryRepository
 import com.example.data.auth.AuthManager
 import com.example.data.auth.AuthUser
 import com.example.data.auth.toAuthUser
+import com.example.util.AppTimezone
+import com.example.util.TimezoneHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
@@ -31,7 +33,9 @@ private const val TAG = "LibraryViewModel"
 
 enum class AppScreen {
     CATALOG,
-    CREATOR_DASHBOARD
+    MY_COLLECTION,
+    CREATOR_DASHBOARD,
+    LOGIN
 }
 
 enum class CreatorTab {
@@ -85,6 +89,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     val bookForCheckout = MutableStateFlow<Book?>(null)
     val bookForReading = MutableStateFlow<Book?>(null)
     val isOrdersDialogOpen = MutableStateFlow(false)
+    val isTimezoneDialogOpen = MutableStateFlow(false)
+    val selectedTimezone = MutableStateFlow(TimezoneHelper.getSavedTimezone(application))
 
     // Gemini AI States
     val bookForAiAssistant = MutableStateFlow<Book?>(null)
@@ -568,6 +574,12 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         } catch (e: Exception) {
             0.0
         }
+    }
+
+    fun setTimezone(timezone: AppTimezone) {
+        TimezoneHelper.saveTimezone(getApplication(), timezone)
+        selectedTimezone.value = timezone
+        userSnackbarMessage.value = "تم ضبط وتعديل الوقت والتاريخ حسب ${timezone.displayNameAr} (${timezone.offsetLabel}) ✓"
     }
 
     fun clearSnackbar() {

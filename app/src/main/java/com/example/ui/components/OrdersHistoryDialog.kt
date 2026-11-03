@@ -37,23 +37,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.PurchaseOrder
 import com.example.ui.theme.BaridiMobGreen
 import com.example.ui.theme.BinanceYellow
 import com.example.ui.theme.GoldPrimary
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.util.AppTimezone
+import com.example.util.TimezoneHelper
 
 @Composable
 fun OrdersHistoryDialog(
     orders: List<PurchaseOrder>,
+    timezone: AppTimezone = AppTimezone.ALGIERS,
+    onOpenTimezoneSelector: () -> Unit = {},
     onDismiss: () -> Unit,
     onDeleteOrder: (Long) -> Unit
 ) {
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -116,9 +117,51 @@ fun OrdersHistoryDialog(
                 }
 
                 HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 12.dp),
+                    modifier = Modifier.padding(vertical = 8.dp),
                     color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                 )
+
+                // Timezone Banner
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = GoldPrimary.copy(alpha = 0.12f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, GoldPrimary.copy(alpha = 0.35f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                        .clickable { onOpenTimezoneSelector() }
+                        .testTag("orders_history_timezone_btn")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Public,
+                                contentDescription = null,
+                                tint = GoldPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "معروضة حسب: ${timezone.flag} ${timezone.displayNameAr} (${timezone.offsetLabel})",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Text(
+                            text = "تعديل ⚙️",
+                            fontSize = 11.sp,
+                            color = GoldPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
 
                 if (orders.isEmpty()) {
                     Box(
@@ -218,9 +261,10 @@ fun OrdersHistoryDialog(
                                         }
 
                                         Text(
-                                            text = dateFormat.format(Date(order.timestamp)),
-                                            fontSize = 10.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                            text = "وقت وتاريخ الطلب: ${TimezoneHelper.formatFullDateTimeWithZone(order.timestamp, timezone)}",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
 

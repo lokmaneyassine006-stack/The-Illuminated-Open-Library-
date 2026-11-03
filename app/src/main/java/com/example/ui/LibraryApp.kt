@@ -92,8 +92,12 @@ import com.example.ui.components.BookReaderDialog
 import com.example.ui.components.OrdersHistoryDialog
 import com.example.ui.components.PaymentSettingsDialog
 import com.example.ui.components.QuickPriceDialog
+import com.example.ui.components.TimezoneSelectorDialog
+import com.example.util.AppTimezone
+import com.example.util.TimezoneHelper
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.NavigationBar
@@ -102,7 +106,10 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.ui.platform.LocalContext
 import com.example.data.auth.AuthUser
 import com.example.ui.components.AuthDialog
+import com.example.ui.components.AuthorLoginScreen
 import com.example.ui.components.CreatorDashboardScreen
+import com.example.ui.components.UserBookCollectionScreen
+import androidx.compose.material.icons.filled.MenuBook
 import com.example.ui.theme.BaridiMobGreen
 import com.example.ui.theme.BinanceYellow
 import com.example.ui.theme.GoldLight
@@ -141,6 +148,8 @@ fun LibraryApp(viewModel: LibraryViewModel) {
     val bookForCheckout by viewModel.bookForCheckout.collectAsStateWithLifecycle()
     val bookForReading by viewModel.bookForReading.collectAsStateWithLifecycle()
     val isOrdersDialogOpen by viewModel.isOrdersDialogOpen.collectAsStateWithLifecycle()
+    val selectedTimezone by viewModel.selectedTimezone.collectAsStateWithLifecycle()
+    val isTimezoneDialogOpen by viewModel.isTimezoneDialogOpen.collectAsStateWithLifecycle()
 
     // Gemini AI states
     val bookForAiAssistant by viewModel.bookForAiAssistant.collectAsStateWithLifecycle()
@@ -174,7 +183,7 @@ fun LibraryApp(viewModel: LibraryViewModel) {
                                 contentDescription = "المكتبة والكتب"
                             )
                         },
-                        label = { Text("المكتبة والكتب", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+                        label = { Text("المكتبة", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = GoldLight,
                             selectedTextColor = GoldLight,
@@ -183,7 +192,24 @@ fun LibraryApp(viewModel: LibraryViewModel) {
                         modifier = Modifier.testTag("nav_catalog_tab")
                     )
                     NavigationBarItem(
-                        selected = currentScreen == AppScreen.CREATOR_DASHBOARD && creatorSelectedTab == CreatorTab.SALES,
+                        selected = currentScreen == AppScreen.MY_COLLECTION,
+                        onClick = { viewModel.selectScreen(AppScreen.MY_COLLECTION) },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.MenuBook,
+                                contentDescription = "مجموعة كتبي"
+                            )
+                        },
+                        label = { Text("مجموعتي", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = GoldLight,
+                            selectedTextColor = GoldLight,
+                            indicatorColor = GoldPrimary.copy(alpha = 0.25f)
+                        ),
+                        modifier = Modifier.testTag("nav_collection_tab")
+                    )
+                    NavigationBarItem(
+                        selected = currentScreen == AppScreen.CREATOR_DASHBOARD,
                         onClick = {
                             viewModel.selectCreatorTab(CreatorTab.SALES)
                             viewModel.selectScreen(AppScreen.CREATOR_DASHBOARD)
@@ -194,7 +220,7 @@ fun LibraryApp(viewModel: LibraryViewModel) {
                                 contentDescription = "لوحة المبيعات"
                             )
                         },
-                        label = { Text("لوحة المبيعات", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+                        label = { Text("المبيعات", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = BaridiMobGreen,
                             selectedTextColor = BaridiMobGreen,
@@ -203,24 +229,21 @@ fun LibraryApp(viewModel: LibraryViewModel) {
                         modifier = Modifier.testTag("nav_sales_tab")
                     )
                     NavigationBarItem(
-                        selected = currentScreen == AppScreen.CREATOR_DASHBOARD && creatorSelectedTab == CreatorTab.REVIEWS,
-                        onClick = {
-                            viewModel.selectCreatorTab(CreatorTab.REVIEWS)
-                            viewModel.selectScreen(AppScreen.CREATOR_DASHBOARD)
-                        },
+                        selected = currentScreen == AppScreen.LOGIN,
+                        onClick = { viewModel.selectScreen(AppScreen.LOGIN) },
                         icon = {
                             Icon(
-                                imageVector = Icons.Default.RateReview,
-                                contentDescription = "آراء القراء"
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "حساب المؤلف"
                             )
                         },
-                        label = { Text("آراء القراء", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+                        label = { Text(if (authUser != null) "حسابي" else "دخول المؤلف", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = GoldLight,
                             selectedTextColor = GoldLight,
                             indicatorColor = GoldPrimary.copy(alpha = 0.25f)
                         ),
-                        modifier = Modifier.testTag("nav_reviews_tab")
+                        modifier = Modifier.testTag("nav_login_tab")
                     )
                 }
             },
@@ -264,7 +287,67 @@ fun LibraryApp(viewModel: LibraryViewModel) {
                         },
                         onSaveReview = { book, readerName, rating, comment, method, isVerified ->
                             viewModel.saveReview(book, readerName, rating, comment, method, isVerified)
-                        }
+                        },
+                        timezone = selectedTimezone,
+                        onOpenTimezoneSelector = { viewModel.isTimezoneDialogOpen.value = true }
+                    )
+                }
+            } else if (currentScreen == AppScreen.MY_COLLECTION) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    UserBookCollectionScreen(
+                        books = allBooks,
+                        timezone = selectedTimezone,
+                        onAddBookClick = {
+                            viewModel.bookToEdit.value = null
+                            viewModel.isAddBookDialogOpen.value = true
+                        },
+                        onEditPriceClick = { book -> viewModel.bookToEditPrice.value = book },
+                        onEditBookClick = { book ->
+                            viewModel.bookToEdit.value = book
+                            viewModel.isAddBookDialogOpen.value = true
+                        },
+                        onDeleteBookClick = { book -> viewModel.deleteBook(book) },
+                        onReadBookClick = { book -> viewModel.bookForReading.value = book },
+                        onBackClick = { viewModel.selectScreen(AppScreen.CATALOG) },
+                        onOpenTimezoneSelector = { viewModel.isTimezoneDialogOpen.value = true }
+                    )
+                }
+            } else if (currentScreen == AppScreen.LOGIN) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                ) {
+                    AuthorLoginScreen(
+                        user = authUser,
+                        isLoading = isAuthLoading,
+                        errorMessage = authErrorMessage,
+                        allBooks = allBooks,
+                        salesSummary = salesSummary,
+                        timezone = selectedTimezone,
+                        onSignIn = { activity -> viewModel.signInWithGoogle(activity) },
+                        onSignOut = { viewModel.signOut(context) },
+                        onBackClick = { viewModel.selectScreen(AppScreen.CATALOG) },
+                        onOpenAddBook = {
+                            viewModel.bookToEdit.value = null
+                            viewModel.isAddBookDialogOpen.value = true
+                        },
+                        onOpenDashboard = {
+                            viewModel.selectCreatorTab(CreatorTab.SALES)
+                            viewModel.selectScreen(AppScreen.CREATOR_DASHBOARD)
+                        },
+                        onOpenPaymentSettings = { viewModel.isPaymentSettingsDialogOpen.value = true },
+                        onOpenTimezoneSelector = { viewModel.isTimezoneDialogOpen.value = true },
+                        onEditPriceClick = { book -> viewModel.bookToEditPrice.value = book },
+                        onEditBookClick = { book ->
+                            viewModel.bookToEdit.value = book
+                            viewModel.isAddBookDialogOpen.value = true
+                        },
+                        onDeleteBookClick = { book -> viewModel.deleteBook(book) }
                     )
                 }
             } else {
@@ -283,12 +366,14 @@ fun LibraryApp(viewModel: LibraryViewModel) {
                             totalBooks = allBooks.size,
                             ordersCount = orders.size,
                             user = authUser,
+                            timezone = selectedTimezone,
                             onOpenOrders = { viewModel.isOrdersDialogOpen.value = true },
                             onOpenCreatorDashboard = {
                                 viewModel.selectCreatorTab(CreatorTab.SALES)
                                 viewModel.selectScreen(AppScreen.CREATOR_DASHBOARD)
                             },
-                            onOpenAuth = { viewModel.openAuthDialog() }
+                            onOpenAuth = { viewModel.selectScreen(AppScreen.LOGIN) },
+                            onOpenTimezoneSelector = { viewModel.isTimezoneDialogOpen.value = true }
                         )
                     }
 
@@ -378,6 +463,8 @@ fun LibraryApp(viewModel: LibraryViewModel) {
                 authUser = authUser,
                 isSaving = isSavingBook,
                 aiDraftState = aiDraftState,
+                timezone = selectedTimezone,
+                onOpenTimezoneSelector = { viewModel.isTimezoneDialogOpen.value = true },
                 onGenerateWithAi = { viewModel.generateBookDraftWithAi(it) },
                 onResetAiDraftState = { viewModel.resetAiDraftState() },
                 onOpenAuth = { viewModel.openAuthDialog() },
@@ -452,6 +539,8 @@ fun LibraryApp(viewModel: LibraryViewModel) {
         if (isOrdersDialogOpen) {
             OrdersHistoryDialog(
                 orders = orders,
+                timezone = selectedTimezone,
+                onOpenTimezoneSelector = { viewModel.isTimezoneDialogOpen.value = true },
                 onDismiss = { viewModel.isOrdersDialogOpen.value = false },
                 onDeleteOrder = { viewModel.deleteOrder(it) }
             )
@@ -467,6 +556,14 @@ fun LibraryApp(viewModel: LibraryViewModel) {
                 onSignOut = { viewModel.signOut(context) }
             )
         }
+
+        if (isTimezoneDialogOpen) {
+            TimezoneSelectorDialog(
+                currentTimezone = selectedTimezone,
+                onSelectTimezone = { viewModel.setTimezone(it) },
+                onDismiss = { viewModel.isTimezoneDialogOpen.value = false }
+            )
+        }
     }
 }
 
@@ -475,9 +572,11 @@ private fun HeroHeaderSection(
     totalBooks: Int,
     ordersCount: Int,
     user: AuthUser?,
+    timezone: AppTimezone = AppTimezone.ALGIERS,
     onOpenOrders: () -> Unit,
     onOpenCreatorDashboard: () -> Unit,
-    onOpenAuth: () -> Unit
+    onOpenAuth: () -> Unit,
+    onOpenTimezoneSelector: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -689,6 +788,86 @@ private fun HeroHeaderSection(
                         Column {
                             Text("خارج الجزائر", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("منصة Binance USDT", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BinanceYellow)
+                        }
+                    }
+                }
+            }
+
+            // Timezone & Live Clock Indicator Banner
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
+                    .clickable { onOpenTimezoneSelector() }
+                    .testTag("hero_timezone_banner")
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(timezone.flag, fontSize = 16.sp)
+                        Column {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "التوقيت: ${timezone.displayNameAr}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = GoldPrimary.copy(alpha = 0.2f)
+                                ) {
+                                    Text(
+                                        text = timezone.offsetLabel,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = GoldLight,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "${TimezoneHelper.formatArabicHumanDate(System.currentTimeMillis(), timezone)} • ${TimezoneHelper.formatTimeOnly(System.currentTimeMillis(), timezone)}",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Public,
+                                contentDescription = "تعديل المنطقة الزمنية",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = "تعديل",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }

@@ -89,6 +89,8 @@ import com.example.ui.theme.CoverGradients
 import com.example.ui.theme.GoldLight
 import com.example.ui.theme.GoldPrimary
 import com.example.ui.viewmodel.AiDraftState
+import com.example.util.AppTimezone
+import com.example.util.TimezoneHelper
 
 val BookCategories = listOf(
     "فكر وفلسفة",
@@ -120,6 +122,8 @@ fun AuthorBookUploadForm(
     authUser: AuthUser? = null,
     isSaving: Boolean = false,
     aiDraftState: AiDraftState = AiDraftState.Idle,
+    timezone: AppTimezone = AppTimezone.ALGIERS,
+    onOpenTimezoneSelector: () -> Unit = {},
     onGenerateWithAi: (String) -> Unit = {},
     onResetAiDraftState: () -> Unit = {},
     onOpenAuth: () -> Unit = {},
@@ -443,6 +447,33 @@ fun AuthorBookUploadForm(
                     .weight(0.8f)
                     .testTag("author_form_period_input")
             )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "التاريخ المعروض حسب: ${timezone.displayNameAr}",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = GoldPrimary.copy(alpha = 0.15f),
+                modifier = Modifier.clickable {
+                    publishedPeriod = TimezoneHelper.formatDateOnly(System.currentTimeMillis(), timezone)
+                }
+            ) {
+                Text(
+                    text = "📅 تعيين تاريخ اليوم (${TimezoneHelper.formatDateOnly(System.currentTimeMillis(), timezone)})",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = GoldPrimary,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
         }
 
         // Category Selection
@@ -926,6 +957,8 @@ fun AuthorBookUploadDialog(
     authUser: AuthUser? = null,
     isSaving: Boolean = false,
     aiDraftState: AiDraftState = AiDraftState.Idle,
+    timezone: AppTimezone = AppTimezone.ALGIERS,
+    onOpenTimezoneSelector: () -> Unit = {},
     onGenerateWithAi: (String) -> Unit = {},
     onResetAiDraftState: () -> Unit = {},
     onOpenAuth: () -> Unit = {},
@@ -955,6 +988,8 @@ fun AuthorBookUploadDialog(
                     authUser = authUser,
                     isSaving = isSaving,
                     aiDraftState = aiDraftState,
+                    timezone = timezone,
+                    onOpenTimezoneSelector = onOpenTimezoneSelector,
                     onGenerateWithAi = onGenerateWithAi,
                     onResetAiDraftState = onResetAiDraftState,
                     onOpenAuth = onOpenAuth,
